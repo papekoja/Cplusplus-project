@@ -1,4 +1,4 @@
-#CPP Project, Communication Classes
+# CPP Project, Communication Classes
 
 - The clientserver directory contains the communication classes Connection and Server,
   and the auxiliary classes ConnectionClosedException and Protocol. These
