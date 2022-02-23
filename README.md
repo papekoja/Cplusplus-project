@@ -4,15 +4,15 @@
   and the auxiliary classes ConnectionClosedException and Protocol. These
   classes are defined in the project description, sections 5.2 and 6.
 - `make` makes the library libclientserver.a and recursively builds the
-  example programs in `test`.
-- The subdirectory `test` contains the example programs `myclient` and `myserver`,
+  example programs in `example`.
+- The subdirectory `example` contains the example programs `myclient` and `myserver`,
   as defined in the project description, section 5.3.
 
 ## building with make
 
 `make` in the clientserver directory builds the library (in
 lib/libclientserver.a) and the example programs
-myclient and myserver (in the test directory).
+myclient and myserver (in the example directory).
 
 For cleaning, use `make clean` and `make distclean`.
 
@@ -23,16 +23,16 @@ To run the examples, open two terminal windows.
 In the first one, start the server with `myserver <port>`, e.g.,
 
 ```
-test/myserver 7777
+example/myserver 7777
 ```
 
 In the other one, start the client with `myclient <server> <port>`, e.g.,
 
 ```
-test/myclient localhost 7777
+example/myclient localhost 7777
 ```
 
-## cmake (optional)
+## building with cmake
 There is also a CMakeLists.txt, which builds the library and the
 example client and server.
 
