@@ -9,12 +9,15 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std;
+using std::string;
+using std::cout;
+using std::cerr;
+using std::endl;
 
 /*
  * Read an integer from a client.
  */
-int readNumber(const shared_ptr<Connection>& conn)
+int readNumber(const std::shared_ptr<Connection>& conn)
 {
         unsigned char byte1 = conn->read();
         unsigned char byte2 = conn->read();
@@ -26,7 +29,7 @@ int readNumber(const shared_ptr<Connection>& conn)
 /*
  * Send a string to a client.
  */
-void writeString(const shared_ptr<Connection>& conn, const string& s)
+void writeString(const std::shared_ptr<Connection>& conn, const string& s)
 {
         for (char c : s) {
                 conn->write(c);
@@ -43,8 +46,8 @@ Server init(int argc, char* argv[])
 
         int port = -1;
         try {
-                port = stoi(argv[1]);
-        } catch (exception& e) {
+                port = std::stoi(argv[1]);
+        } catch (std::exception& e) {
                 cerr << "Wrong format for port number. " << e.what() << endl;
                 exit(2);
         }
@@ -80,7 +83,7 @@ int main(int argc, char* argv[])
                                 cout << "Client closed connection" << endl;
                         }
                 } else {
-                        conn = make_shared<Connection>();
+                        conn = std::make_shared<Connection>();
                         server.registerConnection(conn);
                         cout << "New client connects" << endl;
                 }

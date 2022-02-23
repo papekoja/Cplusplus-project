@@ -7,8 +7,11 @@
 #include <stdexcept>
 #include <string>
 
-using namespace std;
-
+using std::string;
+using std::cin;
+using std::cout;
+using std::cerr;
+using std::endl;
 /*
  * Send an integer to the server as four bytes.
  */
@@ -45,8 +48,8 @@ Connection init(int argc, char* argv[])
 
         int port = -1;
         try {
-                port = stoi(argv[2]);
-        } catch (exception& e) {
+                port = std::stoi(argv[2]);
+        } catch (std::exception& e) {
                 cerr << "Wrong port number. " << e.what() << endl;
                 exit(2);
         }
