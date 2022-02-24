@@ -60,33 +60,43 @@ Server init(int argc, char* argv[])
         return server;
 }
 
+void process_request(std::shared_ptr<Connection>& conn)
+{
+        int    nbr = readNumber(conn);
+        string result;
+        if (nbr > 0) {
+                result = "positive";
+        } else if (nbr == 0) {
+                result = "zero";
+        } else {
+                result = "negative";
+        }
+        writeString(conn, result);
+}
+
+void serve_one(Server& server)
+{
+        auto conn = server.waitForActivity();
+        if (conn != nullptr) {
+                try {
+                    process_request(conn);
+                } catch (ConnectionClosedException&) {
+                        server.deregisterConnection(conn);
+                        cout << "Client closed connection" << endl;
+                }
+        } else {
+                conn = std::make_shared<Connection>();
+                server.registerConnection(conn);
+                cout << "New client connects" << endl;
+        }
+}
+
 int main(int argc, char* argv[])
 {
         auto server = init(argc, argv);
 
         while (true) {
-                auto conn = server.waitForActivity();
-                if (conn != nullptr) {
-                        try {
-                                int    nbr = readNumber(conn);
-                                string result;
-                                if (nbr > 0) {
-                                        result = "positive";
-                                } else if (nbr == 0) {
-                                        result = "zero";
-                                } else {
-                                        result = "negative";
-                                }
-                                writeString(conn, result);
-                        } catch (ConnectionClosedException&) {
-                                server.deregisterConnection(conn);
-                                cout << "Client closed connection" << endl;
-                        }
-                } else {
-                        conn = std::make_shared<Connection>();
-                        server.registerConnection(conn);
-                        cout << "New client connects" << endl;
-                }
+            serve_one(server);
         }
         return 0;
 }
