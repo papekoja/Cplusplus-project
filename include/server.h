@@ -35,49 +35,49 @@
 
 /* A server listens to a port and handles multiple connections */
 class Server {
-      public:
-        /* Creates a server that listens to a port */
-        explicit Server(int port);
+public:
+    /* Creates a server that listens to a port */
+    explicit Server(int port);
 
-        /* Removes all registered connections */
-        virtual ~Server();
+    /* Removes all registered connections */
+    virtual ~Server();
 
-        /* Returns true if the server has been initialized correctly */
-        bool isReady() const;
+    /* Returns true if the server has been initialized correctly */
+    bool isReady() const;
 
-        /* Waits for activity on the port. Returns a previously registered
-           connection object if an existing client wishes to communicate,
-           nullptr if a new client wishes to communicate */
-        std::shared_ptr<Connection> waitForActivity() const;
+    /* Waits for activity on the port. Returns a previously registered
+       connection object if an existing client wishes to communicate,
+       nullptr if a new client wishes to communicate */
+    std::shared_ptr<Connection> waitForActivity() const;
 
-        /* Registers a new connection */
-        void registerConnection(const std::shared_ptr<Connection>& conn);
+    /* Registers a new connection */
+    void registerConnection(const std::shared_ptr<Connection> &conn);
 
-        /* Deregisters a connection */
-        void deregisterConnection(const std::shared_ptr<Connection>& conn);
+    /* Deregisters a connection */
+    void deregisterConnection(const std::shared_ptr<Connection> &conn);
 
-        /* Servers cannot be copied or assigned*/
-        Server(const Server&) = delete;
-        Server& operator=(const Server&) = delete;
-        Server& operator=(Server&&) = delete;
+    /* Servers cannot be copied or assigned*/
+    Server(const Server &) = delete;
+    Server &operator=(const Server &) = delete;
+    Server &operator=(Server &&) = delete;
 
-        /* Servers can be move constructed */
-        Server(Server&& o) :my_socket{o.my_socket},
-                            connections(std::move(o.connections)),
-                            pending_socket{o.pending_socket} {}
+    /* Servers can be move constructed */
+    Server(Server &&o) : my_socket{o.my_socket},
+                         connections(std::move(o.connections)),
+                         pending_socket{o.pending_socket} {}
 
-      protected:
-        /* The number of the communication socket */
-        int my_socket {Connection::no_socket};
+protected:
+    /* The number of the communication socket */
+    int my_socket{Connection::no_socket};
 
-        /* List of registered connections */
-        std::vector<std::shared_ptr<Connection>> connections;
+    /* List of registered connections */
+    std::vector<std::shared_ptr<Connection>> connections;
 
-        /* Socket for a connection waiting to be registered */
-        mutable int pending_socket {Connection::no_socket};
+    /* Socket for a connection waiting to be registered */
+    mutable int pending_socket{Connection::no_socket};
 
-        /* Prints error message and exita */
-        void error(const char* msg) const;
+    /* Prints error message and exita */
+    void error(const char *msg) const;
 };
 
 #endif
