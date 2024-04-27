@@ -11,6 +11,8 @@ DiskDatabase::DiskDatabase(const std::string& rootPath) : dbRoot(rootPath) {
 }
 
 DiskDatabase::~DiskDatabase() {
+    out << "DiskDatabase::~DiskDatabase()" << std::endl;
+    out << "we shuttin down" << std::endl;
 }
 
 bool DiskDatabase::createNewsgroup(const std::string& name) {
@@ -27,6 +29,7 @@ bool DiskDatabase::createNewsgroup(const std::string& name) {
 
 bool DiskDatabase::deleteNewsgroup(int id) {
     auto newsgroupPath = dbRoot / std::to_string(id);
+    out << "Deleting newsgroup with id " << id << "path: " << newsgroupPath << std::endl;
     if (std::filesystem::exists(newsgroupPath)) {
         std::filesystem::remove_all(newsgroupPath);
         return true;
@@ -41,6 +44,7 @@ std::vector<std::pair<int, std::string>> DiskDatabase::listNewsgroups() const {
             std::ifstream in(entry.path() / "meta.txt");
             std::string name;
             std::getline(in, name);
+            out << "listNewsgroups: " << name << std::endl;
             groups.emplace_back(std::stoi(entry.path().filename().string()), name.substr(6));  // Extract name after "Name: "
         }
     }
