@@ -9,10 +9,16 @@
 #include <stdexcept>
 #include <string>
 
+using std::string;
+using std::cout;
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::string;
+
+
+#include "InMemoryDatabase.h"
+InMemoryDatabase db = InMemoryDatabase();
 
 /*
  * Read an integer from a client.
@@ -61,7 +67,18 @@ void process_request(std::shared_ptr<Connection> &conn) {
     int nbr = readNumber(conn);
     string result;
     if (nbr > 0) {
-        result = "positive";
+        std::string newsgroupName = "Tech News";
+        db.createNewsgroup(newsgroupName);
+        std::string title = "New article";
+        std::string author = "Author";
+        std::string text = "Text";
+        db.createArticle(0, title, author, text);
+        auto article = db.readArticle(0, 0);
+        // print article
+        cout << std::get<1>(article) << " " << std::get<2>(article) << " " << std::get<3>(article) << endl;
+        result = std::get<1>(article) + " " + std::get<2>(article) + " " + std::get<3>(article);
+
+
     } else if (nbr == 0) {
         result = "zero";
     } else {
@@ -87,10 +104,9 @@ void serve_one(Server &server) {
 }
 
 int main(int argc, char *argv[]) {
-    auto server = init(argc, argv);
-
-    while (true) {
-        serve_one(server);
-    }
-    return 0;
+        auto server = init(argc, argv);
+        while (true) {
+                serve_one(server);
+        }
+        return 0;
 }

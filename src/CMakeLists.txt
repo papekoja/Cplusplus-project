@@ -3,4 +3,5 @@ target_sources(clientserver
     PRIVATE
         connection.cc
         server.cc
+        inMemoryDatabase.cc
 )
