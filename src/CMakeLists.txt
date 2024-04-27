@@ -4,4 +4,5 @@ target_sources(clientserver
         connection.cc
         server.cc
         inMemoryDatabase.cc
+        DiskDatabase.cc
 )

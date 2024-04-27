@@ -18,8 +18,9 @@ using std::string;
 
 
 #include "InMemoryDatabase.h"
-InMemoryDatabase db = InMemoryDatabase();
-
+#include "DiskDatabase.h"
+// InMemoryDatabase db = InMemoryDatabase();
+DiskDatabase db = DiskDatabase("db");
 /*
  * Read an integer from a client.
  */

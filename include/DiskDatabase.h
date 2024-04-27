@@ -1,27 +1,30 @@
-// InMemoryDatabase.h
-#include "Database.h"
-#include <unordered_map>
-#include <memory>
+#ifndef DISK_DATABASE_H
+#define DISK_DATABASE_H
 
-class InMemoryDatabase : public Database {
+#include "Database.h"
+#include <filesystem>
+#include <string>
+#include <vector>
+
+class DiskDatabase : public Database {
 private:
+    std::filesystem::path dbRoot;
+
     struct Article {
         int id;
         std::string title, author, text;
+        std::string filename() const { return std::to_string(id) + ".txt"; }
     };
 
     struct Newsgroup {
         int id;
         std::string name;
-        std::unordered_map<int, Article> articles;
+        std::string dirname() const { return std::to_string(id); }
     };
 
-    int nextNewsgroupId = 0, nextArticleId = 0;
-    std::unordered_map<int, Newsgroup> newsgroups;
-
 public:
-    InMemoryDatabase() = default;
-    virtual ~InMemoryDatabase();
+    DiskDatabase(const std::string& rootPath);
+    virtual ~DiskDatabase();
     bool createNewsgroup(const std::string& name) override;
     bool deleteNewsgroup(int id) override;
     std::vector<std::pair<int, std::string>> listNewsgroups() const override;
@@ -31,3 +34,5 @@ public:
     std::tuple<bool, std::string, std::string, std::string> readArticle(int newsgroupId, int articleId) const override;
     std::vector<std::pair<int, std::string>> listArticles(int newsgroupId) const override;
 };
+
+#endif
