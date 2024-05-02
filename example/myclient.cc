@@ -23,6 +23,7 @@ void handleDeleteArticle(const Connection &conn);
 void handleGetArticle(const Connection &conn);
 void handleEnd();
 void expect(const Connection &conn, Protocol expected);
+int getId();
 
 /*
  * Send an integer to the server as four bytes.
@@ -135,13 +136,34 @@ int app(const Connection &conn) {
             "7 Get article\n"
             "8 End\n";
     int nbr;
+    string input;
 
     while (true) {
         cout << "\nPlease type a number and return: ";
-        cin >> nbr;
+        std::getline(cin, input);
+        if (input == "h") {
+            cout << "\nCommands:\n"
+                    "1 List newsgroups\n"
+                    "2 Create newsgroup\n"
+                    "3 Delete newsgroup\n"
+                    "4 List articles\n"
+                    "5 Create article\n"
+                    "6 Delete article\n"
+                    "7 Get article\n"
+                    "8 End\n";
+            continue;
+        }
+
+        try {
+            nbr = stoi(input);
+        } catch (std::exception &e) {
+            cout << "Not a valid command (1-8): " << input << "\nwrite \"h\" for help" << endl;
+            continue;
+        }
+
         if (nbr > 8 || nbr < 1) {
-            cout << "Not a valid command: " << nbr << endl;
-            exit(1);
+            cout << "Not a valid command (1-8): " << nbr << " write \"h\" for help" << endl;
+            continue;
         }
 
         Protocol command = static_cast<Protocol>(nbr);
@@ -205,7 +227,7 @@ void handleListNewsgroups(const Connection &conn) {
 void handleCreateNewsgroup(const Connection &conn) {
     string name;
     cout << "Enter name of newsgroup: ";
-    cin >> name;
+    getline(cin, name);
     writeStringParam(conn, name);
     writeCommand(conn, Protocol::COM_END);
 
@@ -232,9 +254,8 @@ void handleCreateNewsgroup(const Connection &conn) {
 }
 
 void handleDeleteNewsgroup(const Connection &conn) {
-    int id;
     cout << "Enter id of newsgroup: ";
-    cin >> id;
+    int id = getId();
     writeNumberParam(conn, id);
     writeCommand(conn, Protocol::COM_END);
 
@@ -257,8 +278,7 @@ void handleDeleteNewsgroup(const Connection &conn) {
 
 void handleListArticles(const Connection &conn) {
     cout << "Enter id of newsgroup: ";
-    int groupId;
-    cin >> groupId;
+    int groupId = getId();
     writeNumberParam(conn, groupId);
     writeCommand(conn, Protocol::COM_END);
 
@@ -292,21 +312,18 @@ void handleListArticles(const Connection &conn) {
 }
 
 void handleCreateArticle(const Connection &conn) {
-    string title;
-    string author;
-    string text;
-    int groupId;
+    string title, author, text;
     cout << "Enter id of newsgroup: ";
-    cin >> groupId;
+    int groupId = getId();
     writeNumberParam(conn, groupId);
     cout << "Enter title of article: ";
-    cin >> title;
+    std::getline(cin, title);
     writeStringParam(conn, title);
     cout << "Enter author of article: ";
-    cin >> author;
+    std::getline(cin, author);
     writeStringParam(conn, author);
     cout << "Enter text of article: ";
-    cin >> text;
+    std::getline(cin, text);
     writeStringParam(conn, text);
     writeCommand(conn, Protocol::COM_END);
 
@@ -327,13 +344,11 @@ void handleCreateArticle(const Connection &conn) {
 }
 
 void handleDeleteArticle(const Connection &conn) {
-    int id;
-    int groupId;
     cout << "Enter id of newsgroup: ";
-    cin >> groupId;
+    int groupId = getId();
     writeNumberParam(conn, groupId);
     cout << "Enter id of article: ";
-    cin >> id;
+    int id = getId();
     writeNumberParam(conn, id);
     writeCommand(conn, Protocol::COM_END);
 
@@ -348,34 +363,48 @@ void handleDeleteArticle(const Connection &conn) {
         break;
     default:
         cout << "Error: Unexpected answer " << static_cast<int>(body) << endl;
-        break;
+        exit(1);
     }
     expect(conn, Protocol::ANS_END);
 }
 
 void handleGetArticle(const Connection &conn) {
-    int id;
-    int groupId;
     cout << "Enter id of newsgroup: ";
-    cin >> groupId;
+    int groupId = getId();
     writeNumberParam(conn, groupId);
     cout << "Enter id of article: ";
-    cin >> id;
+    int id = getId();
     writeNumberParam(conn, id);
     writeCommand(conn, Protocol::COM_END);
 
+    Protocol errorCode;
+    string title, author, text;
     expect(conn, Protocol::ANS_GET_ART);
     Protocol body = readProtocol(conn);
     switch (body) {
     case Protocol::ANS_NAK:
-        cout << "Error: Newsgroup does not exist" << endl;
+        errorCode = readProtocol(conn);
+        if (errorCode == Protocol::ERR_NG_DOES_NOT_EXIST) {
+            cerr << "Error: Newsgroup does not exist" << endl;
+        } else if (errorCode == Protocol::ERR_ART_DOES_NOT_EXIST) {
+            cerr << "Error: Article does not exist" << endl;
+        } else {
+            cerr << "Error: Unexpected answer " << static_cast<int>(errorCode) << endl;
+            exit(1);
+        }
         break;
     case Protocol::ANS_ACK:
-        cout << "Article retrieved" << endl;
+        title = readString(conn);
+        author = readString(conn);
+        text = readString(conn);
+        cout << "Article retrieved: " << title << "\n";
+        cout << "Author: " << author << "\n";
+        cout << "Text:\n"
+             << text << "\n";
         break;
     default:
         cout << "Error: Unexpected answer " << static_cast<int>(body) << endl;
-        break;
+        exit(1);
     }
     Protocol end = readProtocol(conn);
     if (end != Protocol::ANS_END) {
@@ -396,4 +425,16 @@ void expect(const Connection &conn, Protocol expected) {
         cerr << "Error: Expected answer " << static_cast<int>(expected) << ", got " << static_cast<int>(actual) << endl;
         exit(1);
     }
+}
+
+int getId() {
+    int number;
+    string input;
+    getline(cin, input);
+    try {
+        number = stoi(input);
+    } catch (std::exception &e) {
+        return -1;
+    }
+    return number;
 }
