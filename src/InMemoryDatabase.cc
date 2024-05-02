@@ -1,6 +1,7 @@
 #include "InMemoryDatabase.h"
 #include <iostream>
 
+// id and newsgroup tuple
 InMemoryDatabase::~InMemoryDatabase() {
     // Debug message for destructor call
     std::cout << "InMemoryDatabase destructor called.\n";
@@ -72,7 +73,7 @@ bool InMemoryDatabase::deleteArticle(int newsgroupId, int articleId) {
     return true;
 }
 
-std::tuple<bool, std::string, std::string, std::string> InMemoryDatabase::readArticle(int newsgroupId, int articleId) const {
+std::tuple<bool, std::string, std::string, std::string> InMemoryDatabase::getArticle(int newsgroupId, int articleId) const {
     auto ng_it = newsgroups.find(newsgroupId);
     if (ng_it == newsgroups.end()) {
         std::cout << "No newsgroup found for ID: " << newsgroupId << "\n";

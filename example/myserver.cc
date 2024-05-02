@@ -8,6 +8,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
+#include <tuple>
 
 using std::string;
 using std::cout;
@@ -15,23 +17,62 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::string;
-
+using std::uint8_t;
 
 #include "InMemoryDatabase.h"
 #include "DiskDatabase.h"
+#include "protocol.h"
+#include <command.h>
+
 InMemoryDatabase db = InMemoryDatabase();
 // DiskDatabase db = DiskDatabase("db");
+
+int readNumber(const std::shared_ptr<Connection> &conn) {
+    unsigned char byte1 = conn->read();
+    unsigned char byte2 = conn->read();
+    unsigned char byte3 = conn->read();
+    unsigned char byte4 = conn->read();
+    return (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4;
+}
+
+void writeNumber(const std::shared_ptr<Connection> &conn, int value) {
+    conn->write((value >> 24) & 0xFF);
+    conn->write((value >> 16) & 0xFF);
+    conn->write((value >> 8) & 0xFF);
+    conn->write(value & 0xFF);
+}
 /*
  * Read an integer from a client.
  */
-int readCommand(const std::shared_ptr<Connection> &conn) {
-    Protocol command = conn->read();
-
-    Protocol next = conn->read();
-    while(next != Protocol::COM_END) {
-        next = conn->read();
-    }
+Command readCommand(const std::shared_ptr<Connection> &conn){
+    Protocol commandType = static_cast<Protocol>(conn->read());
+    cout << "Command type: " << static_cast<int>(commandType) << "\n";
     
+    std::vector<Param> params;
+    try {
+        unsigned char byte;
+        while((byte = conn->read()) != static_cast<unsigned char>(Protocol::COM_END)) {
+            Protocol paramType = static_cast<Protocol>(byte);
+            if (paramType == Protocol::PAR_STRING) {
+                int length = readNumber(conn);
+                string paramValue;
+                for (unsigned char i = 0; i < length; i++) {
+                    paramValue += static_cast<char>(conn->read());
+                }
+                params.push_back(Param(paramType, paramValue));
+            } else if (paramType == Protocol::PAR_NUM) {
+                int paramValue = readNumber(conn);
+                params.push_back(Param(paramType, paramValue));
+            } else {
+                cout << "Parameter type: " << static_cast<int>(paramType) << "\n";
+                throw std::runtime_error("Unknown parameter type");
+            }
+        }
+        
+    } catch (const ConnectionClosedException&) {
+        throw; // Rethrow to handle disconnection at a higher level
+    }
+    return Command(commandType, params);
 }
 
 /*
@@ -41,7 +82,13 @@ void writeString(const std::shared_ptr<Connection> &conn, const string &s) {
     for (char c : s) {
         conn->write(c);
     }
-    conn->write('$');
+    conn -> write('$');
+    // conn->write(static_cast<unsigned char>(Protocol::ANS_END));
+}
+
+void writeCommand(const std::shared_ptr<Connection> &conn, Protocol command) {
+    cout << "Sending command: " << static_cast<int>(command) << "\n";
+    conn->write(static_cast<unsigned char>(command));
 }
 
 Server init(int argc, char *argv[]) {
@@ -67,28 +114,103 @@ Server init(int argc, char *argv[]) {
 }
 
 void process_request(std::shared_ptr<Connection> &conn) {
-    int nbr = readNumber(conn);
+    Command command = readCommand(conn);
+    bool result;
+    bool result1;
+    bool result2;
+    bool result3;
+    std::vector<std::pair<int, string>> result4;
+    std::vector<std::pair<int, string>> result5;
+    std::tuple<bool, string, string, string> result6;
 
-    string result;
-    if (nbr > 0) {
-        std::string newsgroupName = "Tech News";
-        db.createNewsgroup(newsgroupName);
-        std::string title = "New article";
-        std::string author = "Author";
-        std::string text = "Text";
-        db.createArticle(0, title, author, text);
-        auto article = db.readArticle(0, 0);
-        // print article
-        cout << std::get<1>(article) << " " << std::get<2>(article) << " " << std::get<3>(article) << endl;
-        result = std::get<1>(article) + " " + std::get<2>(article) + " " + std::get<3>(article);
+    switch (command.commandType) {
+        case Protocol::COM_LIST_NG:
+            result4 = db.listNewsgroups();
+            writeCommand(conn, Protocol::ANS_LIST_NG);
+            writeNumber(conn, result4.size());
+            for (auto &ng : result4) {
+                writeNumber(conn, ng.first);
+                writeString(conn, ng.second);
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_CREATE_NG:
+            result = db.createNewsgroup(command.parameters[0].getString());
+            writeCommand(conn, Protocol::ANS_CREATE_NG);
+            if (result == 1) {
+                writeCommand(conn, Protocol::ANS_ACK);
+            } else {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_NG_ALREADY_EXISTS); 
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_DELETE_NG:
+            result1 = db.deleteNewsgroup(command.parameters[0].getInt());
+            writeCommand(conn, Protocol::ANS_DELETE_NG);
+            if (result1 == 1) {
+                writeCommand(conn, Protocol::ANS_ACK);
+            } else {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST); 
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_LIST_ART:
+            result5 = db.listArticles(command.parameters[0].getInt());
+            writeCommand(conn, Protocol::ANS_LIST_ART);
+            if (result5.size() == 0) {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST); 
+            } else {
+                writeCommand(conn, Protocol::ANS_ACK);
+                writeNumber(conn, result5.size());
+                for (auto &art : result5) {
+                    writeNumber(conn, art.first);
+                    writeString(conn, art.second);
+                }
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_CREATE_ART:
+            result2 = db.createArticle(command.parameters[0].getInt(), command.parameters[1].getString(), command.parameters[2].getString(), command.parameters[3].getString());
+            writeCommand(conn, Protocol::ANS_CREATE_ART);
+            if (result2 == 1) {
+                writeCommand(conn, Protocol::ANS_ACK);
+            } else {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST); 
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_DELETE_ART:
+            result3 = db.deleteArticle(command.parameters[0].getInt(), command.parameters[1].getInt());
+            writeCommand(conn, Protocol::ANS_DELETE_ART);
+            if (result3 == 1) {
+                writeCommand(conn, Protocol::ANS_ACK);
+            } else {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_ART_DOES_NOT_EXIST); 
+            }
+            writeCommand(conn, Protocol::ANS_END);
+            break;
+        case Protocol::COM_GET_ART:
+            result6 = db.getArticle(command.parameters[0].getInt(), command.parameters[1].getInt());
+            writeCommand(conn, Protocol::ANS_GET_ART);
 
-
-    } else if (nbr == 0) {
-        result = "zero";
-    } else {
-        result = "negative";
+            if (std::get<0>(result6)) {  
+                writeCommand(conn, Protocol::ANS_ACK);
+                writeString(conn, std::get<1>(result6)); 
+                writeString(conn, std::get<2>(result6));  
+                writeString(conn, std::get<3>(result6));
+            } else {
+                writeCommand(conn, Protocol::ANS_NAK);
+                writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST);
+            }
+            writeCommand(conn, Protocol::ANS_END);
+        default:
+            break;
     }
-    writeString(conn, result);
 }
 
 void serve_one(Server &server) {
@@ -109,6 +231,7 @@ void serve_one(Server &server) {
 
 int main(int argc, char *argv[]) {
         auto server = init(argc, argv);
+        cout << "Waiting for activity" << endl;
         while (true) {
                 serve_one(server);
         }

@@ -69,7 +69,7 @@ bool DiskDatabase::deleteArticle(int newsgroupId, int articleId) {
     return false;
 }
 
-std::tuple<bool, std::string, std::string, std::string> DiskDatabase::readArticle(int newsgroupId, int articleId) const {
+std::tuple<bool, std::string, std::string, std::string> DiskDatabase::getArticle(int newsgroupId, int articleId) const {
     auto articlePath = dbRoot / std::to_string(newsgroupId) / (std::to_string(articleId) + ".txt");
     if (std::filesystem::exists(articlePath)) {
         std::ifstream in(articlePath);
