@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <protocol.h>
 
 using std::cerr;
 using std::cin;
@@ -20,6 +21,32 @@ void writeNumber(const Connection &conn, int value) {
     conn.write((value >> 16) & 0xFF);
     conn.write((value >> 8) & 0xFF);
     conn.write(value & 0xFF);
+}
+
+/*
+ * Send a command to the server.
+ */
+void writeCommand(const Connection &conn, Protocol command) {
+    conn.write(static_cast<unsigned char>(command));
+}
+
+/*
+ * Send a string parameter to the server.
+ */
+void writeStringParam(const Connection &conn, const string &s) {
+    conn.write(static_cast<unsigned char>(Protocol::PAR_STRING));
+    writeNumber(conn, s.size());
+    for (char c : s) {
+        conn.write(c);
+    }
+}
+
+/*
+ * Send a number parameter to the server.
+ */
+void writeNumberParam(const Connection &conn, int value) {
+    conn.write(static_cast<unsigned char>(Protocol::PAR_NUM));
+    writeNumber(conn, value);
 }
 
 /*
