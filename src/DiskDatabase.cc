@@ -11,8 +11,6 @@ DiskDatabase::DiskDatabase(const std::string& rootPath) : dbRoot(rootPath) {
 }
 
 DiskDatabase::~DiskDatabase() {
-    out << "DiskDatabase::~DiskDatabase()" << std::endl;
-    out << "we shuttin down" << std::endl;
 }
 
 bool DiskDatabase::createNewsgroup(const std::string& name) {
@@ -21,7 +19,7 @@ bool DiskDatabase::createNewsgroup(const std::string& name) {
     if (!std::filesystem::exists(newsgroupPath)) {
         std::filesystem::create_directory(newsgroupPath);
         std::ofstream out(newsgroupPath / "meta.txt");
-        out << "Name: " << name << std::endl;
+        // out << "Name: " << name << std::endl;
         return true;
     }
     return false;
@@ -29,7 +27,7 @@ bool DiskDatabase::createNewsgroup(const std::string& name) {
 
 bool DiskDatabase::deleteNewsgroup(int id) {
     auto newsgroupPath = dbRoot / std::to_string(id);
-    out << "Deleting newsgroup with id " << id << "path: " << newsgroupPath << std::endl;
+    // out << "Deleting newsgroup with id " << id << "path: " << newsgroupPath << std::endl;
     if (std::filesystem::exists(newsgroupPath)) {
         std::filesystem::remove_all(newsgroupPath);
         return true;
@@ -44,7 +42,7 @@ std::vector<std::pair<int, std::string>> DiskDatabase::listNewsgroups() const {
             std::ifstream in(entry.path() / "meta.txt");
             std::string name;
             std::getline(in, name);
-            out << "listNewsgroups: " << name << std::endl;
+            // out << "listNewsgroups: " << name << std::endl;
             groups.emplace_back(std::stoi(entry.path().filename().string()), name.substr(6));  // Extract name after "Name: "
         }
     }
@@ -56,7 +54,7 @@ bool DiskDatabase::createArticle(int newsgroupId, const std::string& title, cons
     if (std::filesystem::exists(path)) {
         int articleId = std::hash<std::string>{}(title + author + text);
         std::ofstream out(path / (std::to_string(articleId) + ".txt"));
-        out << "Title: " << title << "\nAuthor: " << author << "\nText: " << text << std::endl;
+        // out << "Title: " << title << "\nAuthor: " << author << "\nText: " << text << std::endl;
         return true;
     }
     return false;

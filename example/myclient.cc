@@ -87,8 +87,27 @@ Connection init(int argc, char *argv[]) {
     return conn;
 }
 
+    // COM_LIST_NG = 1,    // list newsgroups
+    // COM_CREATE_NG = 2,  // create newsgroup
+    // COM_DELETE_NG = 3,  // delete newsgroup
+    // COM_LIST_ART = 4,   // list articles
+    // COM_CREATE_ART = 5, // create article
+    // COM_DELETE_ART = 6, // delete article
+    // COM_GET_ART = 7,    // get article
+
 int app(const Connection &conn) {
-    cout << "Type a number: ";
+    cout << "Hello and welcome to the application!\n
+    To interact with the app please chose the action you want to take by typing a single number followed by return\n
+    1 List newsgroups
+    2 Create newsgroup
+    3 Delete newsgroup
+    4 List articles
+    5 Create article
+    6 Delete article
+    7 Get article
+    " << endl;
+    int nbr;
+    while (cin >> nbr && nbr >= 1 && nbr <= 7) {
     int nbr;
     while (cin >> nbr) {
         try {
