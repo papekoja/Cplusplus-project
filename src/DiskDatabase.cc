@@ -46,6 +46,7 @@ std::vector<std::pair<int, std::string>> DiskDatabase::listNewsgroups() const {
             groups.emplace_back(std::stoi(entry.path().filename().string()), name.substr(6));  // Extract name after "Name: "
         }
     }
+    std::reverse(groups.begin(), groups.end());
     return groups;
 }
 

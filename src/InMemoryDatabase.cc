@@ -37,6 +37,7 @@ std::vector<std::pair<int, std::string>> InMemoryDatabase::listNewsgroups() cons
         result.push_back({ng.first, ng.second.name});
     }
     std::cout << "Listing newsgroups, count: " << result.size() << "\n";
+    std::reverse(result.begin(), result.end());
     return result;
 }
 
