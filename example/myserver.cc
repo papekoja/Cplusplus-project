@@ -27,6 +27,8 @@ using std::uint8_t;
 InMemoryDatabase db = InMemoryDatabase();
 // DiskDatabase db = DiskDatabase("db");
 
+void writeCommand(const std::shared_ptr<Connection> &conn, Protocol command);
+
 int readNumber(const std::shared_ptr<Connection> &conn) {
     unsigned char byte1 = conn->read();
     unsigned char byte2 = conn->read();
@@ -35,12 +37,23 @@ int readNumber(const std::shared_ptr<Connection> &conn) {
     return (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4;
 }
 
-void writeNumber(const std::shared_ptr<Connection> &conn, int value) {
+void writeParNumber(const std::shared_ptr<Connection> &conn, int value) {
+    writeCommand(conn, Protocol::PAR_NUM);
+    cout << "Writing number " << value << endl;
     conn->write((value >> 24) & 0xFF);
     conn->write((value >> 16) & 0xFF);
     conn->write((value >> 8) & 0xFF);
     conn->write(value & 0xFF);
 }
+
+void writeNumber(const std::shared_ptr<Connection> &conn, int value) {
+    cout << "Writing number " << value << endl;
+    conn->write((value >> 24) & 0xFF);
+    conn->write((value >> 16) & 0xFF);
+    conn->write((value >> 8) & 0xFF);
+    conn->write(value & 0xFF);
+}
+
 /*
  * Read an integer from a client.
  */
@@ -78,12 +91,13 @@ Command readCommand(const std::shared_ptr<Connection> &conn){
 /*
  * Send a string to a client.
  */
-void writeString(const std::shared_ptr<Connection> &conn, const string &s) {
+void writeParString(const std::shared_ptr<Connection> &conn, const string &s) {
+    writeCommand(conn, Protocol::PAR_STRING);
+    writeNumber(conn, s.size());
+    cout << "Writing string " << s << endl;
     for (char c : s) {
         conn->write(c);
     }
-    conn -> write('$');
-    // conn->write(static_cast<unsigned char>(Protocol::ANS_END));
 }
 
 void writeCommand(const std::shared_ptr<Connection> &conn, Protocol command) {
@@ -127,10 +141,10 @@ void process_request(std::shared_ptr<Connection> &conn) {
         case Protocol::COM_LIST_NG:
             result4 = db.listNewsgroups();
             writeCommand(conn, Protocol::ANS_LIST_NG);
-            writeNumber(conn, result4.size());
+            writeParNumber(conn, result4.size());
             for (auto &ng : result4) {
-                writeNumber(conn, ng.first);
-                writeString(conn, ng.second);
+                writeParNumber(conn, ng.first);
+                writeParString(conn, ng.second);
             }
             writeCommand(conn, Protocol::ANS_END);
             break;
@@ -164,10 +178,10 @@ void process_request(std::shared_ptr<Connection> &conn) {
                 writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST); 
             } else {
                 writeCommand(conn, Protocol::ANS_ACK);
-                writeNumber(conn, result5.size());
+                writeParNumber(conn, result5.size());
                 for (auto &art : result5) {
-                    writeNumber(conn, art.first);
-                    writeString(conn, art.second);
+                    writeParNumber(conn, art.first);
+                    writeParString(conn, art.second);
                 }
             }
             writeCommand(conn, Protocol::ANS_END);
@@ -200,9 +214,9 @@ void process_request(std::shared_ptr<Connection> &conn) {
 
             if (std::get<0>(result6)) {  
                 writeCommand(conn, Protocol::ANS_ACK);
-                writeString(conn, std::get<1>(result6)); 
-                writeString(conn, std::get<2>(result6));  
-                writeString(conn, std::get<3>(result6));
+                writeParString(conn, std::get<1>(result6)); 
+                writeParString(conn, std::get<2>(result6));  
+                writeParString(conn, std::get<3>(result6));
             } else {
                 writeCommand(conn, Protocol::ANS_NAK);
                 writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST);

@@ -94,6 +94,7 @@ Connection::~Connection() {
 bool Connection::isConnected() const { return my_socket != no_socket; }
 
 void Connection::write(unsigned char ch) const {
+    // std::cout << "Writing " << static_cast<int>(ch) << std::endl;
     if (my_socket == no_socket) {
         error("Write attempted on a not properly opened connection");
     }
@@ -112,6 +113,7 @@ unsigned char Connection::read() const {
     if (count != 1) {
         throw ConnectionClosedException();
     }
+    // std::cout << "Reading " << static_cast<int>(data) << std::endl;
     return data;
 }
 

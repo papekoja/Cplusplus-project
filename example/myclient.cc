@@ -38,6 +38,15 @@ void writeNumber(const Connection &conn, int value) {
 /*
  * Read a number from the server.
  */
+int readNumberParam(const Connection &conn) {
+    expect(conn, Protocol::PAR_NUM);
+    unsigned char byte1 = conn.read();
+    unsigned char byte2 = conn.read();
+    unsigned char byte3 = conn.read();
+    unsigned char byte4 = conn.read();
+    return (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4;
+}
+
 int readNumber(const Connection &conn) {
     unsigned char byte1 = conn.read();
     unsigned char byte2 = conn.read();
@@ -75,11 +84,12 @@ void writeNumberParam(const Connection &conn, int value) {
 /*
  * Read a string from the server.
  */
-string readString(const Connection &conn) {
+string readStringParam(const Connection &conn) {
+    expect(conn, Protocol::PAR_STRING);
+    int length = readNumber(conn);
     string s;
-    char ch;
-    while ((ch = conn.read()) != '$') {
-        s += ch;
+    for (int i = 0; i < length; i++) {
+        s += static_cast<char>(conn.read());
     }
     return s;
 }
@@ -211,10 +221,10 @@ void handleListNewsgroups(const Connection &conn) {
     writeCommand(conn, Protocol::COM_END);
     expect(conn, Protocol::ANS_LIST_NG);
     try {
-        int numberOfNewsgroups = readNumber(conn);
+        int numberOfNewsgroups = readNumberParam(conn);
         for (int i = 0; i < numberOfNewsgroups; i++) {
-            int id = readNumber(conn);
-            string name = readString(conn);
+            int id = readNumberParam(conn);
+            string name = readStringParam(conn);
             cout << "Newsgroup " << id << ": " << name << endl;
         }
     } catch (ConnectionClosedException &) {
@@ -293,10 +303,10 @@ void handleListArticles(const Connection &conn) {
             cout << "Error: Newsgroup does not exist" << endl;
             break;
         case Protocol::ANS_ACK:
-            numberOfArticles = readNumber(conn);
+            numberOfArticles = readNumberParam(conn);
             for (int i = 0; i < numberOfArticles; i++) {
-                id = readNumber(conn);
-                string title = readString(conn);
+                id = readNumberParam(conn);
+                string title = readStringParam(conn);
                 cout << "Article " << id << ": " << title << endl;
             }
             break;
@@ -394,10 +404,11 @@ void handleGetArticle(const Connection &conn) {
         }
         break;
     case Protocol::ANS_ACK:
-        title = readString(conn);
-        author = readString(conn);
-        text = readString(conn);
-        cout << "Article retrieved: " << title << "\n";
+        title = readStringParam(conn);
+        author = readStringParam(conn);
+        text = readStringParam(conn);
+        cout << "Article retrieved:\n";
+        cout << "Title: " << title << "\n";
         cout << "Author: " << author << "\n";
         cout << "Text:\n"
              << text << "\n";
