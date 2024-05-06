@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <optional>
 
 class DiskDatabase : public Database {
 private:
@@ -32,7 +33,7 @@ public:
     bool createArticle(int newsgroupId, const std::string& title, const std::string& author, const std::string& text) override;
     bool deleteArticle(int newsgroupId, int articleId) override;
     std::tuple<bool, std::string, std::string, std::string> getArticle(int newsgroupId, int articleId) const override;
-    std::vector<std::pair<int, std::string>> listArticles(int newsgroupId) const override;
+    std::optional<std::vector<std::pair<int, std::string>>> listArticles(int newsgroupId) const override;
 };
 
 #endif

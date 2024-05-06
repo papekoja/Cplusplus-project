@@ -1,6 +1,7 @@
 #include "Database.h"
 #include <unordered_map>
 #include <memory>
+#include <optional>
 
 class InMemoryDatabase : public Database {
 private:
@@ -28,5 +29,5 @@ public:
     bool createArticle(int newsgroupId, const std::string& title, const std::string& author, const std::string& text) override;
     bool deleteArticle(int newsgroupId, int articleId) override;
     std::tuple<bool, std::string, std::string, std::string> getArticle(int newsgroupId, int articleId) const override;
-    std::vector<std::pair<int, std::string>> listArticles(int newsgroupId) const override;
+    std::optional<std::vector<std::pair<int, std::string>>> listArticles(int newsgroupId) const override;
 };

@@ -136,6 +136,7 @@ void process_request(std::shared_ptr<Connection> &conn) {
     std::vector<std::pair<int, string>> result4;
     std::vector<std::pair<int, string>> result5;
     std::tuple<bool, string, string, string> result6;
+    std::optional<std::vector<std::pair<int, string>>> articlesOpt;
 
     switch (command.commandType) {
         case Protocol::COM_LIST_NG:
@@ -171,15 +172,16 @@ void process_request(std::shared_ptr<Connection> &conn) {
             writeCommand(conn, Protocol::ANS_END);
             break;
         case Protocol::COM_LIST_ART:
-            result5 = db.listArticles(command.parameters[0].getInt());
+            articlesOpt = db.listArticles(command.parameters[0].getInt());
             writeCommand(conn, Protocol::ANS_LIST_ART);
-            if (result5.size() == 0) {
+            if (!articlesOpt.has_value()) {
                 writeCommand(conn, Protocol::ANS_NAK);
                 writeCommand(conn, Protocol::ERR_NG_DOES_NOT_EXIST); 
             } else {
                 writeCommand(conn, Protocol::ANS_ACK);
-                writeParNumber(conn, result5.size());
-                for (auto &art : result5) {
+                const auto &articles = articlesOpt.value();
+                writeParNumber(conn, static_cast<int>(articles.size()));
+                for (auto &art : articles) {
                     writeParNumber(conn, art.first);
                     writeParString(conn, art.second);
                 }

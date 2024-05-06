@@ -1,5 +1,7 @@
 #include "InMemoryDatabase.h"
 #include <iostream>
+#include <algorithm>
+#include <optional>
 
 // id and newsgroup tuple
 InMemoryDatabase::~InMemoryDatabase() {
@@ -91,7 +93,7 @@ std::tuple<bool, std::string, std::string, std::string> InMemoryDatabase::getArt
     return {true, art_it->second.title, art_it->second.author, art_it->second.text};
 }
 
-std::vector<std::pair<int, std::string>> InMemoryDatabase::listArticles(int newsgroupId) const {
+std::optional<std::vector<std::pair<int, std::string>>> InMemoryDatabase::listArticles(int newsgroupId) const {
     std::vector<std::pair<int, std::string>> result;
     auto ng_it = newsgroups.find(newsgroupId);
     if (ng_it == newsgroups.end()) {
